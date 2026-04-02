@@ -1,12 +1,12 @@
 package com.shopping.controller;
 
 import com.shopping.common.Result;
+import com.shopping.dto.AddToCartRequest;
+import com.shopping.dto.UpdateCartRequest;
 import com.shopping.interceptor.UserContext;
 import com.shopping.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -22,18 +22,15 @@ public class CartController {
     }
 
     @PostMapping("/add")
-    public Result<?> addToCart(@RequestBody Map<String, Object> body) {
+    public Result<?> addToCart(@RequestBody AddToCartRequest request) {
         Long userId = UserContext.get();
-        Long productId = Long.valueOf(body.get("productId").toString());
-        Integer quantity = Integer.valueOf(body.get("quantity").toString());
-        return cartService.addToCart(userId, productId, quantity);
+        return cartService.addToCart(userId, request.getProductId(), request.getQuantity());
     }
 
     @PutMapping("/{cartId}")
-    public Result<?> updateCart(@PathVariable Long cartId, @RequestBody Map<String, Object> body) {
+    public Result<?> updateCart(@PathVariable Long cartId, @RequestBody UpdateCartRequest request) {
         Long userId = UserContext.get();
-        Integer quantity = Integer.valueOf(body.get("quantity").toString());
-        return cartService.updateCart(userId, cartId, quantity);
+        return cartService.updateCart(userId, cartId, request.getQuantity());
     }
 
     @DeleteMapping("/{cartId}")

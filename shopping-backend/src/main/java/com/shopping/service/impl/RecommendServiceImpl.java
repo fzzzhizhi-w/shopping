@@ -7,15 +7,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.shopping.common.Result;
 import com.shopping.config.DeepSeekConfig;
 import com.shopping.service.RecommendService;
+import com.shopping.utils.DeepSeekHttpClient;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendServiceImpl implements RecommendService {
 
     private final DeepSeekConfig deepSeekConfig;
-    private final AiServiceImpl aiServiceImpl;
+    private final DeepSeekHttpClient deepSeekHttpClient;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -45,7 +48,7 @@ public class RecommendServiceImpl implements RecommendService {
             requestBody.set("messages", messages);
             requestBody.put("stream", false);
 
-            String responseBody = aiServiceImpl.callDeepSeekApi(requestBody.toString());
+            String responseBody = deepSeekHttpClient.post(requestBody.toString());
             JsonNode responseJson = objectMapper.readTree(responseBody);
             String aiContent = responseJson
                     .path("choices").get(0)
@@ -55,7 +58,9 @@ public class RecommendServiceImpl implements RecommendService {
 
             return Result.success(aiContent);
         } catch (Exception e) {
+            log.error("Recommendation error for userId={}", userId, e);
             return Result.error("Recommendation service error: " + e.getMessage());
         }
     }
 }
+
