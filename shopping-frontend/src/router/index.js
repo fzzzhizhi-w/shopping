@@ -22,7 +22,10 @@ const routes = [
       { path: 'admin/reviews', name: 'AdminReviews', component: () => import('@/views/AdminReviewView.vue'), meta: { requiresAdmin: true } },
       { path: 'favorites', name: 'Favorites', component: () => import('@/views/FavoritesView.vue'), meta: { requiresAuth: true } },
       { path: 'history', name: 'History', component: () => import('@/views/HistoryView.vue'), meta: { requiresAuth: true } },
-      { path: 'addresses', name: 'Addresses', component: () => import('@/views/AddressView.vue'), meta: { requiresAuth: true } }
+      { path: 'addresses', name: 'Addresses', component: () => import('@/views/AddressView.vue'), meta: { requiresAuth: true } },
+      { path: 'group-buys', name: 'GroupBuys', component: () => import('@/views/GroupBuyView.vue'), meta: { requiresAuth: true } },
+      { path: 'merchant/products', name: 'MerchantProducts', component: () => import('@/views/MerchantProductView.vue'), meta: { requiresMerchant: true } },
+      { path: 'merchant/orders', name: 'MerchantOrders', component: () => import('@/views/MerchantOrderView.vue'), meta: { requiresMerchant: true } }
     ]
   },
   { path: '/login', name: 'Login', component: () => import('@/views/LoginView.vue') },
@@ -43,6 +46,14 @@ router.beforeEach((to, from, next) => {
     if (!userStore.isLoggedIn) {
       next({ path: '/login', query: { redirect: to.fullPath } })
     } else if (userStore.userInfo?.role !== 'admin') {
+      next({ path: '/' })
+    } else {
+      next()
+    }
+  } else if (to.meta.requiresMerchant) {
+    if (!userStore.isLoggedIn) {
+      next({ path: '/login', query: { redirect: to.fullPath } })
+    } else if (userStore.userInfo?.role !== 'merchant' && userStore.userInfo?.role !== 'admin') {
       next({ path: '/' })
     } else {
       next()

@@ -2,6 +2,7 @@ package com.shopping.config;
 
 import com.shopping.interceptor.AdminInterceptor;
 import com.shopping.interceptor.AuthInterceptor;
+import com.shopping.interceptor.MerchantInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -14,6 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
     private final AdminInterceptor adminInterceptor;
+    private final MerchantInterceptor merchantInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -37,9 +39,18 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/reviews/products/**",
                         // Admin routes are excluded from AuthInterceptor because
                         // AdminInterceptor applies stricter checks (validates token + role=admin)
-                        "/api/admin/**"
+                        "/api/admin/**",
+                        // Merchant routes are excluded from AuthInterceptor because
+                        // MerchantInterceptor applies stricter checks (validates token + role=merchant/admin)
+                        "/api/merchant/**",
+                        // GroupBuy public endpoints
+                        "/api/groupbuy/product/**",
+                        // GroupBuy detail is public, and other groupbuy endpoints handle auth manually
+                        "/api/groupbuy/**"
                 );
         registry.addInterceptor(adminInterceptor)
                 .addPathPatterns("/api/admin/**");
+        registry.addInterceptor(merchantInterceptor)
+                .addPathPatterns("/api/merchant/**");
     }
 }

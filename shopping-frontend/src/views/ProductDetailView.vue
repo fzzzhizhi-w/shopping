@@ -114,6 +114,29 @@
           </el-button>
         </div>
 
+        <!-- Group Buy Section -->
+        <div class="group-buy-section" v-if="product.id">
+          <div class="group-buy-header">
+            <el-icon><UserFilled /></el-icon> 拼团优惠
+          </div>
+          <div v-if="groupBuys.length > 0" class="group-buy-list">
+            <div v-for="gb in groupBuys" :key="gb.id" class="group-buy-item">
+              <span class="group-price">¥{{ gb.groupPrice }}</span>
+              <span class="group-progress">{{ gb.currentMembers }}/{{ gb.minMembers }}人</span>
+              <el-button size="small" type="warning" @click="handleJoinGroupBuy(gb.shareCode)">加入拼团</el-button>
+            </div>
+          </div>
+          <el-button
+            size="large"
+            type="success"
+            class="btn-group"
+            @click="groupBuyDialogVisible = true"
+            :disabled="!product.stock"
+          >
+            发起拼团
+          </el-button>
+        </div>
+
         <div class="guarantee-bar">
           <span><el-icon><CircleCheck /></el-icon> 正品保证</span>
           <span><el-icon><Van /></el-icon> 快速发货</span>
@@ -170,6 +193,40 @@
     </div>
 
     <el-empty v-if="!loading && !product.id" description="商品不存在" />
+
+    <!-- Start Group Buy Dialog -->
+    <el-dialog v-model="groupBuyDialogVisible" title="发起拼团" width="400px">
+      <el-form :model="groupBuyForm" label-width="80px">
+        <el-form-item label="拼团价格">
+          <el-input-number v-model="groupBuyForm.groupPrice" :min="0.01" :precision="2" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="成团人数">
+          <el-input-number v-model="groupBuyForm.minMembers" :min="2" :max="10" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="有效时间">
+          <el-select v-model="groupBuyForm.expireHours" style="width:100%">
+            <el-option label="12小时" :value="12" />
+            <el-option label="24小时" :value="24" />
+            <el-option label="48小时" :value="48" />
+            <el-option label="72小时" :value="72" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="groupBuyDialogVisible = false">取消</el-button>
+        <el-button type="success" @click="submitGroupBuy" :loading="groupBuyLoading">发起拼团</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Share Code Dialog -->
+    <el-dialog v-model="shareCodeVisible" title="拼团发起成功！" width="400px">
+      <div class="share-code-box">
+        <p>您的拼团已成功发起，分享码：</p>
+        <div class="share-code">{{ currentShareCode }}</div>
+        <p class="share-hint">将此分享码发送给好友，好友可在商品页面点击"加入拼团"并输入分享码参与！</p>
+        <el-button type="primary" @click="copyShareCode">复制分享码</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -185,6 +242,7 @@ import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { getCart } from '@/api/cart'
 import { addFavorite, removeFavorite, getFavoriteStatus, recordHistory, getProductReviews } from '@/api/user'
+import { createGroupBuy, joinGroupBuy, getProductGroupBuys } from '@/api/groupbuy'
 
 const route = useRoute()
 const router = useRouter()
@@ -205,6 +263,17 @@ const reviewsLoading = ref(false)
 const reviewTotal = ref(0)
 const reviewPageNum = ref(1)
 const reviewPageSize = ref(5)
+
+const groupBuys = ref([])
+const groupBuyDialogVisible = ref(false)
+const shareCodeVisible = ref(false)
+const groupBuyLoading = ref(false)
+const currentShareCode = ref('')
+const groupBuyForm = ref({
+  groupPrice: 0,
+  minMembers: 2,
+  expireHours: 24
+})
 
 const images = computed(() => {
   const imgs = []
@@ -305,6 +374,63 @@ const loadReviews = async () => {
 
 const formatReviewTime = (t) => t ? new Date(t).toLocaleDateString('zh-CN') : ''
 
+const loadGroupBuys = async () => {
+  try {
+    const res = await getProductGroupBuys(product.value.id)
+    groupBuys.value = res.data || []
+  } catch {
+    // ignore
+  }
+}
+
+const handleJoinGroupBuy = async (shareCode) => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  try {
+    await joinGroupBuy(shareCode)
+    ElMessage.success('成功加入拼团！')
+    loadGroupBuys()
+  } catch {
+    // handled by interceptor
+  }
+}
+
+const submitGroupBuy = async () => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  groupBuyLoading.value = true
+  try {
+    const res = await createGroupBuy({
+      productId: product.value.id,
+      groupPrice: groupBuyForm.value.groupPrice,
+      minMembers: groupBuyForm.value.minMembers,
+      expireHours: groupBuyForm.value.expireHours
+    })
+    currentShareCode.value = res.data?.shareCode || res.data?.groupBuy?.shareCode
+    groupBuyDialogVisible.value = false
+    shareCodeVisible.value = true
+    loadGroupBuys()
+  } catch {
+    // handled
+  } finally {
+    groupBuyLoading.value = false
+  }
+}
+
+const copyShareCode = () => {
+  navigator.clipboard.writeText(currentShareCode.value).then(() => {
+    ElMessage.success('分享码已复制')
+  }).catch(() => {
+    ElMessage.info(`分享码：${currentShareCode.value}`)
+  })
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -323,6 +449,8 @@ onMounted(async () => {
     // Load reviews
     if (product.value.id) {
       loadReviews()
+      loadGroupBuys()
+      groupBuyForm.value.groupPrice = product.value.price || 0
     }
   } catch {
     ElMessage.error('获取商品详情失败')
@@ -582,5 +710,66 @@ onMounted(async () => {
   font-size: 14px;
   color: #555;
   line-height: 1.6;
+}
+.group-buy-section {
+  margin-top: 20px;
+  background: #f0fff4;
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  padding: 16px;
+}
+.group-buy-header {
+  font-size: 15px;
+  font-weight: 600;
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.group-buy-list {
+  margin-bottom: 12px;
+}
+.group-buy-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #c8e6c9;
+}
+.group-buy-item:last-child {
+  border-bottom: none;
+}
+.group-price {
+  color: #c0392b;
+  font-weight: 700;
+  font-size: 16px;
+  min-width: 70px;
+}
+.group-progress {
+  color: #555;
+  font-size: 13px;
+}
+.btn-group {
+  width: 100%;
+  height: 46px;
+  font-size: 15px;
+}
+.share-code-box {
+  text-align: center;
+  padding: 16px 0;
+}
+.share-code {
+  font-size: 32px;
+  font-weight: 800;
+  color: #c0392b;
+  letter-spacing: 6px;
+  margin: 16px 0;
+  font-family: monospace;
+}
+.share-hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 16px;
 }
 </style>

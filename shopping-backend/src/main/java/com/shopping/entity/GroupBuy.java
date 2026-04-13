@@ -7,37 +7,36 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("product")
-public class Product {
+@TableName("group_buy")
+public class GroupBuy {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private String name;
+    private Long productId;
 
-    private String description;
+    private BigDecimal groupPrice;
 
-    private BigDecimal price;
+    private Integer minMembers;
 
-    private Integer stock;
+    private Integer maxMembers;
 
-    private Integer sales = 0;
+    private Integer currentMembers;
 
-    private Long categoryId;
+    /** 0=open, 1=success, 2=failed, 3=expired */
+    private Integer status;
 
-    private String images;
+    private String shareCode;
 
-    private String mainImage;
+    private Long creatorId;
 
-    private Integer status = 1;
+    private LocalDateTime expireTime;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
-    private Long merchantId;
 
     @TableLogic
     private Integer deleted;

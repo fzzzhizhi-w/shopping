@@ -66,7 +66,12 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-        user.setRole("user");
+
+        String role = "user";
+        if ("merchant".equals(request.getRole())) {
+            role = "merchant";
+        }
+        user.setRole(role);
 
         userMapper.insert(user);
 
