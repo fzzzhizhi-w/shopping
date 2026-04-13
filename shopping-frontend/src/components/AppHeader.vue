@@ -86,6 +86,14 @@
                     <el-icon><ChatSquare /></el-icon> 评价管理
                   </el-dropdown-item>
                 </template>
+                <template v-if="userStore.userInfo?.role === 'merchant'">
+                  <el-dropdown-item divided command="merchant-products">
+                    <el-icon><Shop /></el-icon> 我的商品
+                  </el-dropdown-item>
+                  <el-dropdown-item command="merchant-orders">
+                    <el-icon><Document /></el-icon> 我的订单
+                  </el-dropdown-item>
+                </template>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
@@ -121,7 +129,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Setting, Document, Grid, Star, Clock, Location, PictureFilled, Tickets, ChatSquare } from '@element-plus/icons-vue'
+import { Search, Setting, Document, Grid, Star, Clock, Location, PictureFilled, Tickets, ChatSquare, Shop } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { getCategories } from '@/api/product'
@@ -175,6 +183,10 @@ const handleCommand = (command) => {
     router.push('/admin/ads')
   } else if (command === 'admin-reviews') {
     router.push('/admin/reviews')
+  } else if (command === 'merchant-products') {
+    router.push('/merchant/products')
+  } else if (command === 'merchant-orders') {
+    router.push('/merchant/orders')
   }
 }
 

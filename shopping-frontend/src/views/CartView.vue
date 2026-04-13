@@ -115,6 +115,22 @@
 
     <!-- Checkout Dialog -->
     <el-dialog v-model="checkoutVisible" title="填写收货信息" width="500px" :close-on-click-modal="false">
+      <div v-if="savedAddresses.length > 0" class="saved-addresses">
+        <p class="addr-hint">选择已保存的地址：</p>
+        <div
+          v-for="addr in savedAddresses"
+          :key="addr.id"
+          class="addr-item"
+          :class="{ selected: selectedAddressId === addr.id }"
+          @click="handleSelectAddress(addr)"
+        >
+          <span class="addr-name">{{ addr.name }}</span>
+          <span class="addr-phone">{{ addr.phone }}</span>
+          <span class="addr-detail">{{ [addr.province, addr.city, addr.district, addr.detail].filter(Boolean).join(' ') }}</span>
+          <el-tag v-if="addr.isDefault" size="small" type="success" class="addr-default">默认</el-tag>
+        </div>
+        <el-divider>或手动填写</el-divider>
+      </div>
       <el-form :model="orderForm" :rules="orderRules" ref="orderFormRef" label-width="80px">
         <el-form-item label="收货人" prop="receiverName">
           <el-input v-model="orderForm.receiverName" placeholder="请输入收货人姓名" />
@@ -151,6 +167,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCartStore } from '@/stores/cart'
 import { getCart, removeFromCart, updateCart, clearCart } from '@/api/cart'
 import { createOrder } from '@/api/order'
+import { getAddresses } from '@/api/user'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -161,6 +178,8 @@ const selectedItems = ref([])
 const allSelected = ref(false)
 const checkoutVisible = ref(false)
 const orderLoading = ref(false)
+const savedAddresses = ref([])
+const selectedAddressId = ref(null)
 
 const orderForm = ref({
   receiverName: '',
@@ -245,27 +264,38 @@ const handleClearSelected = async () => {
   }
 }
 
-const handleCheckout = () => {
+const handleCheckout = async () => {
   if (selectedItems.value.length === 0) {
     ElMessage.warning('请先选择商品')
     return
   }
   checkoutVisible.value = true
+  try {
+    const res = await getAddresses()
+    savedAddresses.value = res.data || []
+  } catch {
+    savedAddresses.value = []
+  }
+}
+
+const handleSelectAddress = (addr) => {
+  selectedAddressId.value = addr.id
+  orderForm.value.receiverName = addr.name || ''
+  orderForm.value.receiverPhone = addr.phone || ''
+  const parts = [addr.province, addr.city, addr.district, addr.detail].filter(Boolean)
+  orderForm.value.receiverAddress = parts.join(' ')
 }
 
 const submitOrder = async () => {
   await orderFormRef.value.validate()
   orderLoading.value = true
   try {
-    const items = selectedItems.value.map(item => ({
-      productId: item.productId || item.product?.id,
-      quantity: item.quantity,
-      price: item.price
-    }))
     await createOrder({
-      ...orderForm.value,
-      items,
-      totalAmount: selectedTotal.value
+      address: orderForm.value.receiverAddress,
+      receiverName: orderForm.value.receiverName,
+      receiverPhone: orderForm.value.receiverPhone,
+      remark: orderForm.value.remark,
+      cartIds: selectedItems.value.map(item => item.id)
     })
     ElMessage.success('订单提交成功！')
     checkoutVisible.value = false
@@ -412,5 +442,50 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 6px 0;
+}
+.saved-addresses {
+  margin-bottom: 12px;
+}
+.addr-hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+.addr-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.addr-item:hover {
+  border-color: #c0392b;
+}
+.addr-item.selected {
+  border-color: #c0392b;
+  background: #fff8f8;
+}
+.addr-name {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.addr-phone {
+  color: #666;
+  flex-shrink: 0;
+}
+.addr-detail {
+  color: #555;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.addr-default {
+  flex-shrink: 0;
 }
 </style>

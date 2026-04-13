@@ -91,16 +91,19 @@ const handleLogin = async () => {
   try {
     const res = await login(form.value)
     const token = res.data?.token || res.token
+    const role = res.data?.role || res.role
     userStore.setToken(token)
-    try {
-      const infoRes = await getUserInfo()
-      userStore.setUserInfo(infoRes.data)
-    } catch {
-      // ignore info error
-    }
+    userStore.setUserInfo({ username: res.data?.username || res.username, role: role, avatar: res.data?.avatar || res.avatar })
+    // fetch full info in background
+    getUserInfo().then(infoRes => userStore.setUserInfo(infoRes.data)).catch(() => {})
     ElMessage.success('登录成功！欢迎回来')
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    if (!route.query.redirect) {
+      if (role === 'admin') router.push('/admin/products')
+      else if (role === 'merchant') router.push('/merchant/products')
+      else router.push('/')
+    } else {
+      router.push(route.query.redirect)
+    }
   } catch {
     // error shown by interceptor
   } finally {

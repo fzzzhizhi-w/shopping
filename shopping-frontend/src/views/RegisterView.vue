@@ -62,6 +62,12 @@
             maxlength="11"
           />
         </el-form-item>
+        <el-form-item label="账号类型">
+          <el-radio-group v-model="form.role" size="large">
+            <el-radio value="user">普通用户</el-radio>
+            <el-radio value="merchant">商家</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item>
           <el-button
             type="danger"
@@ -99,7 +105,8 @@ const form = ref({
   password: '',
   confirmPassword: '',
   email: '',
-  phone: ''
+  phone: '',
+  role: 'user'
 })
 
 const validateConfirmPassword = (rule, value, callback) => {
