@@ -38,7 +38,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}/status")
-    public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
-        return productService.updateProductStatus(id, status);
+    public Result<?> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
+        return productService.updateProductStatus(id, body.get("status"));
     }
 }
