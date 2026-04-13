@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
             return Result.error(400, "Invalid password");
         }
 
-        String token = jwtUtils.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtils.generateToken(user.getId(), user.getUsername(), user.getRole());
 
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);

@@ -16,4 +16,13 @@ public interface OrderService {
     Result<?> cancelOrder(Long userId, Long orderId);
 
     Result<?> payOrder(Long userId, Long orderId);
+
+    // Admin operations
+    Result<PageResult<?>> adminListOrders(Integer status, int pageNum, int pageSize);
+
+    Result<?> adminGetOrderDetail(Long orderId);
+
+    Result<?> shipOrder(Long orderId);
+
+    Result<?> deliverOrder(Long orderId);
 }

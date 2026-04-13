@@ -1,5 +1,6 @@
 package com.shopping.config;
 
+import com.shopping.interceptor.AdminInterceptor;
 import com.shopping.interceptor.AuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
+    private final AdminInterceptor adminInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -30,7 +32,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/auth/**",
                         "/api/products/**",
-                        "/api/categories/**"
+                        "/api/categories/**",
+                        "/api/admin/**"
                 );
+        registry.addInterceptor(adminInterceptor)
+                .addPathPatterns("/api/admin/**");
     }
 }

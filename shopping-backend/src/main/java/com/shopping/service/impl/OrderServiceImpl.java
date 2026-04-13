@@ -198,4 +198,74 @@ public class OrderServiceImpl implements OrderService {
 
         return Result.success("Payment successful");
     }
+
+    @Override
+    public Result<PageResult<?>> adminListOrders(Integer status, int pageNum, int pageSize) {
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<Order>()
+                .orderByDesc(Order::getCreateTime);
+
+        if (status != null) {
+            wrapper.eq(Order::getStatus, status);
+        }
+
+        Page<Order> page = new Page<>(pageNum, pageSize);
+        Page<Order> result = orderMapper.selectPage(page, wrapper);
+
+        List<Map<String, Object>> orderList = new ArrayList<>();
+        for (Order order : result.getRecords()) {
+            Map<String, Object> orderMap = new HashMap<>();
+            orderMap.put("order", order);
+            List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                    .eq(OrderItem::getOrderId, order.getId()));
+            orderMap.put("items", items);
+            orderList.add(orderMap);
+        }
+
+        return Result.success(PageResult.of(result.getTotal(), orderList, pageNum, pageSize));
+    }
+
+    @Override
+    public Result<?> adminGetOrderDetail(Long orderId) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            return Result.error(404, "Order not found");
+        }
+
+        List<OrderItem> items = orderItemMapper.selectList(new LambdaQueryWrapper<OrderItem>()
+                .eq(OrderItem::getOrderId, orderId));
+
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("order", order);
+        detail.put("items", items);
+
+        return Result.success(detail);
+    }
+
+    @Override
+    public Result<?> shipOrder(Long orderId) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            return Result.error(404, "Order not found");
+        }
+        if (order.getStatus() != 1) {
+            return Result.error(400, "Only paid orders can be shipped");
+        }
+        order.setStatus(2);
+        orderMapper.updateById(order);
+        return Result.success("Order shipped");
+    }
+
+    @Override
+    public Result<?> deliverOrder(Long orderId) {
+        Order order = orderMapper.selectById(orderId);
+        if (order == null) {
+            return Result.error(404, "Order not found");
+        }
+        if (order.getStatus() != 2) {
+            return Result.error(400, "Only shipped orders can be marked as delivered");
+        }
+        order.setStatus(3);
+        orderMapper.updateById(order);
+        return Result.success("Order delivered");
+    }
 }

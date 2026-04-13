@@ -57,6 +57,17 @@
                 <el-dropdown-item command="ai-chat">
                   <el-icon><ChatDotRound /></el-icon> AI助手
                 </el-dropdown-item>
+                <template v-if="userStore.userInfo?.role === 'admin'">
+                  <el-dropdown-item divided command="admin-products">
+                    <el-icon><Setting /></el-icon> 商品管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-orders">
+                    <el-icon><Document /></el-icon> 订单管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-categories">
+                    <el-icon><Grid /></el-icon> 分类管理
+                  </el-dropdown-item>
+                </template>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
@@ -92,7 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Setting, Document, Grid } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { getCategories } from '@/api/product'
@@ -128,6 +139,12 @@ const handleCommand = (command) => {
     router.push('/orders')
   } else if (command === 'ai-chat') {
     router.push('/ai-chat')
+  } else if (command === 'admin-products') {
+    router.push('/admin/products')
+  } else if (command === 'admin-orders') {
+    router.push('/admin/orders')
+  } else if (command === 'admin-categories') {
+    router.push('/admin/categories')
   }
 }
 
