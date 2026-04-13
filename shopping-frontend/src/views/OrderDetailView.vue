@@ -110,10 +110,61 @@
             </div>
           </div>
         </el-card>
+        <!-- Reviews Section (for delivered orders) -->
+        <el-card class="info-card" v-if="order.status === 'COMPLETED' || order.status === 3">
+          <template #header>
+            <span class="card-title">订单评价</span>
+          </template>
+          <div v-if="reviewsLoading" v-loading="true" style="height:80px" />
+          <div v-else>
+            <div v-for="item in reviewItems" :key="item.item?.id" class="review-item-row">
+              <div class="review-product-info">
+                <img
+                  :src="item.item?.productImage || 'https://via.placeholder.com/50x50'"
+                  class="review-thumb"
+                  @error="onImgError"
+                />
+                <span class="review-product-name">{{ item.item?.productName }}</span>
+              </div>
+              <div v-if="item.reviewed && item.review" class="review-done">
+                <el-rate :model-value="item.review.rating" disabled size="small" />
+                <p class="review-text">{{ item.review.content }}</p>
+              </div>
+              <el-button
+                v-else
+                size="small"
+                type="primary"
+                @click="openReviewDialog(item.item)"
+              >
+                去评价
+              </el-button>
+            </div>
+          </div>
+        </el-card>
       </div>
     </template>
 
     <el-empty v-if="!loading && !order.id" description="订单不存在" />
+
+    <!-- Review Dialog -->
+    <el-dialog v-model="reviewDialogVisible" title="发表评价" width="480px" @closed="resetReviewForm">
+      <div class="reviewing-product">
+        <img :src="reviewTarget?.productImage || 'https://via.placeholder.com/50x50'" class="review-thumb" />
+        <span>{{ reviewTarget?.productName }}</span>
+      </div>
+      <el-form :model="reviewForm" label-width="60px" style="margin-top:16px">
+        <el-form-item label="评分">
+          <el-rate v-model="reviewForm.rating" :max="5" />
+        </el-form-item>
+        <el-form-item label="评价">
+          <el-input v-model="reviewForm.content" type="textarea" :rows="4" placeholder="说说你对商品的看法吧～" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reviewDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="reviewSaving" @click="submitReview">提交评价</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -122,6 +173,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, payOrder, cancelOrder } from '@/api/order'
+import { getOrderReviews, createReview } from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -129,6 +181,12 @@ const router = useRouter()
 const order = ref({})
 const loading = ref(false)
 const actionLoading = ref(false)
+const reviewItems = ref([])
+const reviewsLoading = ref(false)
+const reviewDialogVisible = ref(false)
+const reviewSaving = ref(false)
+const reviewTarget = ref(null)
+const reviewForm = ref({ rating: 5, content: '' })
 
 const statusMap = {
   PENDING: { label: '待付款', type: 'warning', desc: '请尽快完成支付', icon: 'Timer' },
@@ -181,11 +239,57 @@ const handleCancel = async () => {
   }
 }
 
+const loadReviews = async () => {
+  if (!order.value.id) return
+  reviewsLoading.value = true
+  try {
+    const res = await getOrderReviews(order.value.id)
+    reviewItems.value = res.data || []
+  } catch {
+    // ignore
+  } finally {
+    reviewsLoading.value = false
+  }
+}
+
+const openReviewDialog = (item) => {
+  reviewTarget.value = item
+  reviewForm.value = { rating: 5, content: '' }
+  reviewDialogVisible.value = true
+}
+
+const resetReviewForm = () => {
+  reviewForm.value = { rating: 5, content: '' }
+  reviewTarget.value = null
+}
+
+const submitReview = async () => {
+  reviewSaving.value = true
+  try {
+    await createReview(order.value.id, {
+      orderItemId: reviewTarget.value.id,
+      productId: reviewTarget.value.productId,
+      rating: reviewForm.value.rating,
+      content: reviewForm.value.content
+    })
+    ElMessage.success('评价成功！')
+    reviewDialogVisible.value = false
+    loadReviews()
+  } catch {
+    // handled
+  } finally {
+    reviewSaving.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
     const res = await getOrderDetail(route.params.id)
     order.value = res.data || {}
+    if (order.value.status === 'COMPLETED' || order.value.status === 3) {
+      loadReviews()
+    }
   } catch {
     ElMessage.error('获取订单详情失败')
   } finally {
@@ -308,5 +412,44 @@ onMounted(async () => {
   color: #c0392b;
   font-size: 24px;
   font-weight: 800;
+}
+.review-item-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.review-item-row:last-child { border-bottom: none; }
+.review-product-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+.review-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+.review-product-name {
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+.review-done { display: flex; flex-direction: column; gap: 4px; }
+.review-text { margin: 0; font-size: 13px; color: #555; }
+.reviewing-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #333;
 }
 </style>

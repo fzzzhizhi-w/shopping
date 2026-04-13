@@ -58,12 +58,15 @@ shopping/
 
 ## 功能特性
 
-### 商城功能
-- 🏠 **首页**：轮播图 + 分类导航 + 热销商品 + 新品推荐
+### 商城功能（用户端）
+- 🏠 **首页**：轮播图（API驱动，含广告位展示）+ 分类导航 + 热销商品 + 新品推荐
 - 🔍 **商品搜索**：关键词搜索、分类筛选、价格排序
-- 📦 **商品详情**：图片展示、规格选择、加入购物车
+- 📦 **商品详情**：图片展示、规格选择、加入购物车、**收藏商品**、**商品评价列表**
 - 🛒 **购物车**：增删改、批量结算
-- 📋 **订单管理**：创建订单、支付模拟、取消订单、状态跟踪
+- 📋 **订单管理**：创建订单、支付模拟、取消订单、状态跟踪、**订单评价**
+- ❤️ **我的收藏**：商品收藏/取消收藏、收藏列表分页管理
+- 📜 **浏览历史**：自动记录商品浏览记录、历史列表管理、清空历史
+- 📍 **收货地址**：新增/编辑/删除地址、设置默认地址
 - 👤 **用户中心**：个人信息、修改密码
 
 ### AI功能（DeepSeek）
@@ -71,6 +74,14 @@ shopping/
 - ⚡ **流式对话**：SSE打字机效果（后端推送delta，前端实时展示）
 - 📜 **历史记录**：按会话管理对话历史
 - 🎯 **AI推荐**：根据分类和预算智能推荐商品
+
+### 后台管理功能（admin角色）
+- 📦 **商品管理**：CRUD、上下架
+- 🗂️ **分类管理**：CRUD
+- 📋 **订单管理**：查看所有订单、发货、确认收货
+- 🖼️ **轮播图管理**：新增/编辑/删除轮播图，排序与状态控制
+- 📢 **广告位管理**：多位置广告配置（首页顶部/侧边/商品列表）
+- ⭐ **评价管理**：查看所有商品评价
 
 ## 快速开始
 
@@ -174,6 +185,54 @@ npm run dev
 | DELETE | `/api/ai/history?sessionId=` | 清除历史 |
 | GET | `/api/recommend?category=&budget=` | AI商品推荐 |
 
+### 公开接口（无需Token）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/public/banners` | 活跃轮播图列表 |
+| GET | `/api/public/ads?position=` | 广告位列表（可按位置筛选） |
+
+### 收藏（需要Token）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/favorites` | 我的收藏列表 |
+| POST | `/api/favorites/{productId}` | 收藏商品 |
+| DELETE | `/api/favorites/{productId}` | 取消收藏 |
+| GET | `/api/favorites/{productId}/status` | 查询是否已收藏 |
+
+### 浏览历史（需要Token）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/history` | 浏览历史列表 |
+| POST | `/api/history/{productId}` | 记录浏览 |
+| DELETE | `/api/history/{productId}` | 删除单条记录 |
+| DELETE | `/api/history` | 清空浏览历史 |
+
+### 收货地址（需要Token）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/addresses` | 我的地址列表 |
+| POST | `/api/addresses` | 新增地址 |
+| PUT | `/api/addresses/{id}` | 编辑地址 |
+| DELETE | `/api/addresses/{id}` | 删除地址 |
+| PUT | `/api/addresses/{id}/default` | 设为默认地址 |
+
+### 订单评价（需要Token / 商品评价列表公开）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/reviews/orders/{orderId}` | 提交评价 |
+| GET | `/api/reviews/orders/{orderId}` | 查看订单评价状态 |
+| GET | `/api/reviews/products/{productId}` | 商品评价列表（公开） |
+
+### 后台管理（需要admin Token）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET/POST/PUT/DELETE | `/api/admin/products/**` | 商品CRUD |
+| GET/PUT | `/api/admin/orders/**` | 订单管理（发货/收货） |
+| GET/POST/PUT/DELETE | `/api/admin/categories/**` | 分类CRUD |
+| GET/POST/PUT/DELETE | `/api/admin/banners/**` | 轮播图CRUD |
+| GET/POST/PUT/DELETE | `/api/admin/ads/**` | 广告位CRUD |
+| GET | `/api/admin/reviews` | 评价列表查询 |
+
 ### Token使用方式
 
 登录后获取token，在后续请求头中携带：
@@ -208,20 +267,28 @@ while (true) {
 
 | 表名 | 说明 |
 |------|------|
-| `user` | 用户信息（支持逻辑删除） |
+| `user` | 用户信息（支持逻辑删除，role字段区分用户/管理员） |
 | `category` | 商品分类 |
 | `product` | 商品信息 |
 | `cart` | 购物车 |
-| `order` | 订单主表 |
+| `order` | 订单主表（支持逻辑删除） |
 | `order_item` | 订单明细 |
 | `chat_history` | AI对话历史 |
+| `product_favorite` | 商品收藏（user_id+product_id唯一索引） |
+| `browse_history` | 浏览历史（user_id+product_id唯一索引，记录最新浏览时间） |
+| `address` | 用户收货地址（支持多地址+默认标记） |
+| `order_review` | 订单评价（order_item_id唯一索引，防重复评价） |
+| `banner` | 轮播图（status启用/停用，sort排序） |
+| `ad` | 广告位（position区分首页顶部/侧边/商品列表等） |
 
 ## 安全说明
 
 - 密码使用 **BCrypt** 加密存储
-- Token 通过 **HMAC-SHA256** 签名，默认有效期24小时
+- Token 通过 **HMAC-SHA256** 签名，默认有效期24小时，Payload包含userId与role
 - AI接口、购物车、订单接口均需携带 `Token` 请求头
-- 商品浏览、分类接口对外公开无需认证
+- 商品浏览、分类、公开Banner/广告接口对外公开无需认证
+- 后台管理接口（`/api/admin/**`）由AdminInterceptor强制校验role=admin
+- 收藏/浏览历史/地址/评价接口均做用户数据隔离（userId匹配校验）
 - CORS 已配置，支持前端跨域请求
 
 ## 开发说明

@@ -33,6 +33,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/**",
                         "/api/products/**",
                         "/api/categories/**",
+                        "/api/public/**",
+                        "/api/reviews/products/**",
                         "/api/admin/**"
                 );
         registry.addInterceptor(adminInterceptor)

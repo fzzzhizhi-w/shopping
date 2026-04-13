@@ -16,7 +16,13 @@ const routes = [
       { path: 'profile', name: 'Profile', component: () => import('@/views/ProfileView.vue'), meta: { requiresAuth: true } },
       { path: 'admin/products', name: 'AdminProducts', component: () => import('@/views/AdminProductView.vue'), meta: { requiresAdmin: true } },
       { path: 'admin/orders', name: 'AdminOrders', component: () => import('@/views/AdminOrderView.vue'), meta: { requiresAdmin: true } },
-      { path: 'admin/categories', name: 'AdminCategories', component: () => import('@/views/AdminCategoryView.vue'), meta: { requiresAdmin: true } }
+      { path: 'admin/categories', name: 'AdminCategories', component: () => import('@/views/AdminCategoryView.vue'), meta: { requiresAdmin: true } },
+      { path: 'admin/banners', name: 'AdminBanners', component: () => import('@/views/AdminBannerView.vue'), meta: { requiresAdmin: true } },
+      { path: 'admin/ads', name: 'AdminAds', component: () => import('@/views/AdminAdView.vue'), meta: { requiresAdmin: true } },
+      { path: 'admin/reviews', name: 'AdminReviews', component: () => import('@/views/AdminReviewView.vue'), meta: { requiresAdmin: true } },
+      { path: 'favorites', name: 'Favorites', component: () => import('@/views/FavoritesView.vue'), meta: { requiresAuth: true } },
+      { path: 'history', name: 'History', component: () => import('@/views/HistoryView.vue'), meta: { requiresAuth: true } },
+      { path: 'addresses', name: 'Addresses', component: () => import('@/views/AddressView.vue'), meta: { requiresAuth: true } }
     ]
   },
   { path: '/login', name: 'Login', component: () => import('@/views/LoginView.vue') },

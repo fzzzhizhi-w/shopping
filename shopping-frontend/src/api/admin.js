@@ -18,3 +18,18 @@ export const adminListCategories = () => request.get('/admin/categories')
 export const adminCreateCategory = (data) => request.post('/admin/categories', data)
 export const adminUpdateCategory = (id, data) => request.put(`/admin/categories/${id}`, data)
 export const adminDeleteCategory = (id) => request.delete(`/admin/categories/${id}`)
+
+// Admin Banner APIs
+export const adminListBanners = () => request.get('/admin/banners')
+export const adminCreateBanner = (data) => request.post('/admin/banners', data)
+export const adminUpdateBanner = (id, data) => request.put(`/admin/banners/${id}`, data)
+export const adminDeleteBanner = (id) => request.delete(`/admin/banners/${id}`)
+
+// Admin Ad APIs
+export const adminListAds = () => request.get('/admin/ads')
+export const adminCreateAd = (data) => request.post('/admin/ads', data)
+export const adminUpdateAd = (id, data) => request.put(`/admin/ads/${id}`, data)
+export const adminDeleteAd = (id) => request.delete(`/admin/ads/${id}`)
+
+// Admin Review APIs
+export const adminListReviews = (params) => request.get('/admin/reviews', { params })
