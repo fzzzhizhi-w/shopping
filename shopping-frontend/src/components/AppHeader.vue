@@ -54,9 +54,38 @@
                 <el-dropdown-item command="orders">
                   <el-icon><List /></el-icon> 我的订单
                 </el-dropdown-item>
+                <el-dropdown-item command="favorites">
+                  <el-icon><Star /></el-icon> 我的收藏
+                </el-dropdown-item>
+                <el-dropdown-item command="history">
+                  <el-icon><Clock /></el-icon> 浏览历史
+                </el-dropdown-item>
+                <el-dropdown-item command="addresses">
+                  <el-icon><Location /></el-icon> 收货地址
+                </el-dropdown-item>
                 <el-dropdown-item command="ai-chat">
                   <el-icon><ChatDotRound /></el-icon> AI助手
                 </el-dropdown-item>
+                <template v-if="userStore.userInfo?.role === 'admin'">
+                  <el-dropdown-item divided command="admin-products">
+                    <el-icon><Setting /></el-icon> 商品管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-orders">
+                    <el-icon><Document /></el-icon> 订单管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-categories">
+                    <el-icon><Grid /></el-icon> 分类管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-banners">
+                    <el-icon><PictureFilled /></el-icon> 轮播图管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-ads">
+                    <el-icon><Tickets /></el-icon> 广告位管理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="admin-reviews">
+                    <el-icon><ChatSquare /></el-icon> 评价管理
+                  </el-dropdown-item>
+                </template>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
@@ -92,7 +121,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Setting, Document, Grid, Star, Clock, Location, PictureFilled, Tickets, ChatSquare } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { getCategories } from '@/api/product'
@@ -126,8 +155,26 @@ const handleCommand = (command) => {
     router.push('/profile')
   } else if (command === 'orders') {
     router.push('/orders')
+  } else if (command === 'favorites') {
+    router.push('/favorites')
+  } else if (command === 'history') {
+    router.push('/history')
+  } else if (command === 'addresses') {
+    router.push('/addresses')
   } else if (command === 'ai-chat') {
     router.push('/ai-chat')
+  } else if (command === 'admin-products') {
+    router.push('/admin/products')
+  } else if (command === 'admin-orders') {
+    router.push('/admin/orders')
+  } else if (command === 'admin-categories') {
+    router.push('/admin/categories')
+  } else if (command === 'admin-banners') {
+    router.push('/admin/banners')
+  } else if (command === 'admin-ads') {
+    router.push('/admin/ads')
+  } else if (command === 'admin-reviews') {
+    router.push('/admin/reviews')
   }
 }
 

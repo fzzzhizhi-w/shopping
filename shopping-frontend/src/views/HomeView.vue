@@ -4,7 +4,15 @@
     <section class="banner-section">
       <el-carousel :interval="4000" height="400px" arrow="always">
         <el-carousel-item v-for="banner in banners" :key="banner.id">
-          <div class="banner-slide" :style="{ background: banner.gradient }">
+          <!-- API banner with image -->
+          <div v-if="banner.image" class="banner-slide-img" @click="banner.link && router.push(banner.link)" :style="{ cursor: banner.link ? 'pointer' : 'default' }">
+            <img :src="banner.image" :alt="banner.title || ''" class="banner-bg-img" />
+            <div class="banner-img-overlay" v-if="banner.title">
+              <h2 class="banner-title">{{ banner.title }}</h2>
+            </div>
+          </div>
+          <!-- Static gradient banner -->
+          <div v-else class="banner-slide" :style="{ background: banner.gradient }">
             <div class="banner-content">
               <h2 class="banner-title">{{ banner.title }}</h2>
               <p class="banner-sub">{{ banner.sub }}</p>
@@ -17,6 +25,18 @@
         </el-carousel-item>
       </el-carousel>
     </section>
+
+    <!-- Home Ads (if any) -->
+    <div v-if="homeAds.length > 0" class="home-ads page-container">
+      <div
+        v-for="ad in homeAds"
+        :key="ad.id"
+        class="ad-item"
+        @click="ad.link && router.push(ad.link)"
+      >
+        <img :src="ad.image" :alt="ad.title || ''" class="ad-img" />
+      </div>
+    </div>
 
     <div class="page-container">
       <!-- Categories -->
@@ -121,6 +141,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ProductCard from '@/components/ProductCard.vue'
 import { getHotProducts, getNewProducts, getCategories } from '@/api/product'
+import { getBanners, getAds } from '@/api/banner'
 
 const router = useRouter()
 
@@ -131,7 +152,7 @@ const hotLoading = ref(false)
 const newLoading = ref(false)
 const catsLoading = ref(false)
 
-const banners = [
+const STATIC_BANNERS = [
   {
     id: 1,
     gradient: 'linear-gradient(135deg, #c0392b 0%, #e74c3c 50%, #c0392b 100%)',
@@ -161,6 +182,9 @@ const banners = [
   }
 ]
 
+const banners = ref(STATIC_BANNERS)
+const homeAds = ref([])
+
 const catIconMap = {
   '手机': 'Iphone',
   '电脑': 'Monitor',
@@ -187,6 +211,31 @@ onMounted(async () => {
   catsLoading.value = true
   hotLoading.value = true
   newLoading.value = true
+
+  // Load banners from API (fallback to static if empty/error)
+  try {
+    const res = await getBanners()
+    const apiBanners = res.data || []
+    if (apiBanners.length > 0) {
+      banners.value = apiBanners.map((b) => ({
+        id: b.id,
+        image: b.image,
+        title: b.title,
+        link: b.link || '/products',
+        gradient: 'linear-gradient(135deg,#c0392b,#e74c3c)'
+      }))
+    }
+  } catch {
+    // keep static banners
+  }
+
+  // Load home ads
+  try {
+    const res = await getAds('home_top')
+    homeAds.value = res.data || []
+  } catch {
+    // ignore
+  }
 
   try {
     const res = await getCategories()
@@ -233,6 +282,31 @@ onMounted(async () => {
   position: relative;
   overflow: hidden;
 }
+.banner-slide-img {
+  height: 400px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.banner-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.banner-img-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.5));
+  padding: 20px 40px;
+}
+.banner-img-overlay .banner-title {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
 .banner-content {
   z-index: 1;
   color: #fff;
@@ -253,6 +327,27 @@ onMounted(async () => {
   opacity: 0.25;
   user-select: none;
   line-height: 1;
+}
+.home-ads {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0 0;
+}
+.ad-item {
+  flex: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.ad-img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+.ad-item:hover .ad-img {
+  transform: scale(1.03);
 }
 .categories-section {
   background: #fff;

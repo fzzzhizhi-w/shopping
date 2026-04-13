@@ -102,6 +102,16 @@
           >
             立即购买
           </el-button>
+          <el-button
+            size="large"
+            :type="isFavorited ? 'warning' : ''"
+            :icon="isFavorited ? StarFilled : Star"
+            :loading="favLoading"
+            @click="handleToggleFavorite"
+            class="btn-fav"
+          >
+            {{ isFavorited ? '已收藏' : '收藏' }}
+          </el-button>
         </div>
 
         <div class="guarantee-bar">
@@ -133,6 +143,29 @@
             <el-empty v-else description="暂无规格参数" />
           </div>
         </el-tab-pane>
+        <el-tab-pane label="商品评价" name="reviews">
+          <div class="reviews-content">
+            <div v-if="reviewsLoading" v-loading="true" style="height:100px" />
+            <el-empty v-else-if="reviews.length === 0" description="暂无评价" />
+            <div v-else>
+              <div v-for="r in reviews" :key="r.id" class="review-item">
+                <div class="review-header">
+                  <el-rate :model-value="r.rating" disabled size="small" />
+                  <span class="review-time">{{ formatReviewTime(r.createTime) }}</span>
+                </div>
+                <p class="review-content">{{ r.content }}</p>
+              </div>
+              <el-pagination
+                v-if="reviewTotal > reviewPageSize"
+                v-model:current-page="reviewPageNum"
+                :page-size="reviewPageSize"
+                :total="reviewTotal"
+                layout="prev, pager, next"
+                @current-change="loadReviews"
+              />
+            </div>
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </div>
 
@@ -144,13 +177,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ShoppingCart } from '@element-plus/icons-vue'
+import { ShoppingCart, Star, StarFilled } from '@element-plus/icons-vue'
 import { getProductDetail } from '@/api/product'
 import { addToCart } from '@/api/cart'
 import { createOrder } from '@/api/order'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { getCart } from '@/api/cart'
+import { addFavorite, removeFavorite, getFavoriteStatus, recordHistory, getProductReviews } from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -164,6 +198,13 @@ const buyLoading = ref(false)
 const quantity = ref(1)
 const activeTab = ref('detail')
 const activeImage = ref('')
+const isFavorited = ref(false)
+const favLoading = ref(false)
+const reviews = ref([])
+const reviewsLoading = ref(false)
+const reviewTotal = ref(0)
+const reviewPageNum = ref(1)
+const reviewPageSize = ref(5)
 
 const images = computed(() => {
   const imgs = []
@@ -225,6 +266,45 @@ const handleBuyNow = async () => {
   }
 }
 
+const handleToggleFavorite = async () => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  favLoading.value = true
+  try {
+    if (isFavorited.value) {
+      await removeFavorite(product.value.id)
+      isFavorited.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(product.value.id)
+      isFavorited.value = true
+      ElMessage.success('已加入收藏')
+    }
+  } catch {
+    // handled
+  } finally {
+    favLoading.value = false
+  }
+}
+
+const loadReviews = async () => {
+  reviewsLoading.value = true
+  try {
+    const res = await getProductReviews(product.value.id, { pageNum: reviewPageNum.value, pageSize: reviewPageSize.value })
+    reviews.value = res.data?.list || []
+    reviewTotal.value = res.data?.total || 0
+  } catch {
+    // ignore
+  } finally {
+    reviewsLoading.value = false
+  }
+}
+
+const formatReviewTime = (t) => t ? new Date(t).toLocaleDateString('zh-CN') : ''
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -232,6 +312,17 @@ onMounted(async () => {
     product.value = res.data || {}
     if (images.value.length > 0) {
       activeImage.value = images.value[0]
+    }
+    // Record browse history (silently, only if logged in)
+    if (userStore.isLoggedIn && product.value.id) {
+      recordHistory(product.value.id).catch(() => {})
+      getFavoriteStatus(product.value.id).then((r) => {
+        isFavorited.value = !!r.data
+      }).catch(() => {})
+    }
+    // Load reviews
+    if (product.value.id) {
+      loadReviews()
     }
   } catch {
     ElMessage.error('获取商品详情失败')
@@ -416,6 +507,10 @@ onMounted(async () => {
   background: #c0392b;
   border-color: #c0392b;
 }
+.btn-fav {
+  height: 50px;
+  min-width: 100px;
+}
 .guarantee-bar {
   display: flex;
   gap: 20px;
@@ -463,5 +558,29 @@ onMounted(async () => {
   font-size: 13px;
   color: #333;
   border: 1px solid #eee;
+}
+.reviews-content {
+  padding: 8px 0;
+}
+.review-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.review-item:last-child { border-bottom: none; }
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.review-time {
+  font-size: 12px;
+  color: #999;
+}
+.review-content {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
 }
 </style>

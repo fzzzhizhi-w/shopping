@@ -4,11 +4,11 @@
 
     <el-tabs v-model="activeStatus" @tab-change="handleTabChange" class="order-tabs">
       <el-tab-pane label="全部" name="" />
-      <el-tab-pane label="待付款" name="PENDING" />
-      <el-tab-pane label="待发货" name="PAID" />
-      <el-tab-pane label="待收货" name="SHIPPED" />
-      <el-tab-pane label="已完成" name="COMPLETED" />
-      <el-tab-pane label="已取消" name="CANCELLED" />
+      <el-tab-pane label="待付款" name="0" />
+      <el-tab-pane label="待发货" name="1" />
+      <el-tab-pane label="待收货" name="2" />
+      <el-tab-pane label="已完成" name="3" />
+      <el-tab-pane label="已取消" name="4" />
     </el-tabs>
 
     <div v-loading="loading" class="orders-list">
@@ -59,7 +59,7 @@
             <el-button
               size="small"
               type="danger"
-              v-if="order.status === 'PENDING'"
+              v-if="order.status === 0"
               @click="handlePay(order)"
               :loading="payingId === order.id"
             >
@@ -67,7 +67,7 @@
             </el-button>
             <el-button
               size="small"
-              v-if="order.status === 'PENDING'"
+              v-if="order.status === 0"
               @click="handleCancel(order)"
             >
               取消订单
@@ -75,7 +75,7 @@
             <el-button
               size="small"
               type="success"
-              v-if="order.status === 'SHIPPED'"
+              v-if="order.status === 2"
               @click="handleConfirmReceive(order)"
             >
               确认收货
@@ -115,14 +115,14 @@ const total = ref(0)
 const payingId = ref(null)
 
 const statusMap = {
-  PENDING: { label: '待付款', type: 'warning' },
-  PAID: { label: '待发货', type: 'primary' },
-  SHIPPED: { label: '待收货', type: 'primary' },
-  COMPLETED: { label: '已完成', type: 'success' },
-  CANCELLED: { label: '已取消', type: 'info' }
+  0: { label: '待付款', type: 'warning' },
+  1: { label: '待发货', type: 'primary' },
+  2: { label: '待收货', type: 'primary' },
+  3: { label: '已完成', type: 'success' },
+  4: { label: '已取消', type: 'info' }
 }
 
-const getStatusLabel = (s) => statusMap[s]?.label || s || '未知'
+const getStatusLabel = (s) => statusMap[s]?.label || '未知'
 const getStatusType = (s) => statusMap[s]?.type || 'info'
 
 const formatPrice = (v) => (v == null ? '0.00' : Number(v).toFixed(2))
@@ -139,7 +139,7 @@ const fetchOrders = async () => {
   loading.value = true
   try {
     const params = { page: currentPage.value, size: pageSize.value }
-    if (activeStatus.value) params.status = activeStatus.value
+    if (activeStatus.value !== '') params.status = Number(activeStatus.value)
     const res = await getOrders(params)
     const data = res.data || {}
     orders.value = data.records || data.list || data.content || data || []

@@ -93,3 +93,81 @@ CREATE TABLE IF NOT EXISTS `chat_history` (
     PRIMARY KEY (`id`),
     KEY `idx_user_session` (`user_id`, `session_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `product_favorite` (
+    `id`          BIGINT   NOT NULL AUTO_INCREMENT,
+    `user_id`     BIGINT   NOT NULL,
+    `product_id`  BIGINT   NOT NULL,
+    `create_time` DATETIME,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `browse_history` (
+    `id`          BIGINT   NOT NULL AUTO_INCREMENT,
+    `user_id`     BIGINT   NOT NULL,
+    `product_id`  BIGINT   NOT NULL,
+    `view_time`   DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `address` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+    `user_id`     BIGINT       NOT NULL,
+    `name`        VARCHAR(50)  NOT NULL,
+    `phone`       VARCHAR(20)  NOT NULL,
+    `province`    VARCHAR(50),
+    `city`        VARCHAR(50),
+    `district`    VARCHAR(50),
+    `detail`      VARCHAR(500) NOT NULL,
+    `is_default`  TINYINT      NOT NULL DEFAULT 0,
+    `create_time` DATETIME,
+    `update_time` DATETIME,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `order_review` (
+    `id`            BIGINT         NOT NULL AUTO_INCREMENT,
+    `user_id`       BIGINT         NOT NULL,
+    `order_id`      BIGINT         NOT NULL,
+    `order_item_id` BIGINT         NOT NULL,
+    `product_id`    BIGINT         NOT NULL,
+    `rating`        TINYINT        NOT NULL DEFAULT 5 COMMENT '1-5 stars',
+    `content`       TEXT,
+    `images`        TEXT,
+    `create_time`   DATETIME,
+    `update_time`   DATETIME,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_order_item` (`order_item_id`),
+    KEY `idx_product_id` (`product_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `banner` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+    `title`       VARCHAR(100),
+    `image`       VARCHAR(500) NOT NULL,
+    `link`        VARCHAR(500),
+    `sort`        INT          NOT NULL DEFAULT 0,
+    `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '1:active 0:inactive',
+    `create_time` DATETIME,
+    `update_time` DATETIME,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `ad` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+    `title`       VARCHAR(100),
+    `image`       VARCHAR(500) NOT NULL,
+    `link`        VARCHAR(500),
+    `position`    VARCHAR(50)  COMMENT 'home_top, home_side, etc.',
+    `sort`        INT          NOT NULL DEFAULT 0,
+    `status`      TINYINT      NOT NULL DEFAULT 1,
+    `create_time` DATETIME,
+    `update_time` DATETIME,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
