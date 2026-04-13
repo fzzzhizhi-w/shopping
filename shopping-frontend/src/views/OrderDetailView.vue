@@ -9,7 +9,7 @@
 
     <template v-if="!loading && order.id">
       <!-- Status Banner -->
-      <div class="status-banner" :class="`status-${order.status?.toLowerCase()}`">
+      <div class="status-banner" :class="`status-${getStatusCss(order.status)}`">
         <el-icon :size="36" class="status-icon"><component :is="getStatusIcon(order.status)" /></el-icon>
         <div>
           <div class="status-label">{{ getStatusLabel(order.status) }}</div>
@@ -18,14 +18,14 @@
         <div class="status-actions">
           <el-button
             type="danger"
-            v-if="order.status === 'PENDING'"
+            v-if="order.status === 0"
             @click="handlePay"
             :loading="actionLoading"
           >
             立即支付
           </el-button>
           <el-button
-            v-if="order.status === 'PENDING'"
+            v-if="order.status === 0"
             @click="handleCancel"
             :loading="actionLoading"
           >
@@ -111,7 +111,7 @@
           </div>
         </el-card>
         <!-- Reviews Section (for delivered orders) -->
-        <el-card class="info-card" v-if="order.status === 'COMPLETED' || order.status === 3">
+        <el-card class="info-card" v-if="order.status === 3">
           <template #header>
             <span class="card-title">订单评价</span>
           </template>
@@ -189,17 +189,18 @@ const reviewTarget = ref(null)
 const reviewForm = ref({ rating: 5, content: '' })
 
 const statusMap = {
-  PENDING: { label: '待付款', type: 'warning', desc: '请尽快完成支付', icon: 'Timer' },
-  PAID: { label: '待发货', type: 'primary', desc: '商家正在处理您的订单', icon: 'Goods' },
-  SHIPPED: { label: '待收货', type: 'primary', desc: '商品正在配送中，请耐心等待', icon: 'Van' },
-  COMPLETED: { label: '已完成', type: 'success', desc: '订单已完成，感谢您的购买！', icon: 'CircleCheck' },
-  CANCELLED: { label: '已取消', type: 'info', desc: '订单已取消', icon: 'CircleClose' }
+  0: { label: '待付款', type: 'warning', desc: '请尽快完成支付', icon: 'Timer', css: 'pending' },
+  1: { label: '待发货', type: 'primary', desc: '商家正在处理您的订单', icon: 'Goods', css: 'paid' },
+  2: { label: '待收货', type: 'primary', desc: '商品正在配送中，请耐心等待', icon: 'Van', css: 'shipped' },
+  3: { label: '已完成', type: 'success', desc: '订单已完成，感谢您的购买！', icon: 'CircleCheck', css: 'completed' },
+  4: { label: '已取消', type: 'info', desc: '订单已取消', icon: 'CircleClose', css: 'cancelled' }
 }
 
-const getStatusLabel = (s) => statusMap[s]?.label || s || '未知'
+const getStatusLabel = (s) => statusMap[s]?.label || '未知'
 const getStatusType = (s) => statusMap[s]?.type || 'info'
 const getStatusDesc = (s) => statusMap[s]?.desc || ''
 const getStatusIcon = (s) => statusMap[s]?.icon || 'InfoFilled'
+const getStatusCss = (s) => statusMap[s]?.css || 'pending'
 
 const formatPrice = (v) => (v == null ? '0.00' : Number(v).toFixed(2))
 
@@ -287,7 +288,7 @@ onMounted(async () => {
   try {
     const res = await getOrderDetail(route.params.id)
     order.value = res.data || {}
-    if (order.value.status === 'COMPLETED' || order.value.status === 3) {
+    if (order.value.status === 3) {
       loadReviews()
     }
   } catch {

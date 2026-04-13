@@ -35,6 +35,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/categories/**",
                         "/api/public/**",
                         "/api/reviews/products/**",
+                        // Admin routes are excluded from AuthInterceptor because
+                        // AdminInterceptor applies stricter checks (validates token + role=admin)
                         "/api/admin/**"
                 );
         registry.addInterceptor(adminInterceptor)
